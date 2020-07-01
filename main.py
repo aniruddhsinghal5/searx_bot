@@ -6,7 +6,6 @@ from telegram.error import BadRequest, TimedOut
 import logging
 import requests
 import json
-import time
 from settings import TOKEN, INSTANCE_URL
 
 logging.basicConfig(format="%(levelname)s - %(message)s", level=logging.DEBUG)
@@ -42,12 +41,7 @@ def searx(update, context):
         ).text
     )
 
-    print(json.dumps(response, indent=2))
-
     for i in range(results_number):
-        if results_number > 5:
-            time.sleep(1)
-
         try:
             result = response["results"][i]
 
