@@ -34,16 +34,17 @@ def searx(update, context):
     except ValueError:
         results_number = 1
 
-    response = json.loads(
-        requests.post(
-            INSTANCE_URL,
-            data={"q": " ".join(context.args), "language": "en-US", "format": "json"},
-        ).text
+    response = requests.post(
+        INSTANCE_URL,
+        data={"q": " ".join(context.args), "language": "en-US", "format": "json"},
     )
 
     for i in range(results_number):
         try:
-            result = response["results"][i]
+            result = json.loads(response.text)["results"][i]
+            query_link = (
+                response.url + "?" + response.request.body.replace('&format=json', '')
+            )
 
             try:
                 content = f"\n{result['content']}\n"
@@ -54,7 +55,7 @@ def searx(update, context):
                 update.message.reply_text(
                     f"""
 *{result['title']}*
-[direct link]({result['pretty_url']})
+[query link]({query_link}) | [direct link]({result['pretty_url']})
 {content}
 `from: {result['engines']}`""",
                     parse_mode=ParseMode.MARKDOWN,
