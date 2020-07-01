@@ -57,7 +57,7 @@ def searx(update, context):
 *{result['title']}*
 [query link]({query_link}) | [direct link]({result['pretty_url']})
 {content}
-`from: {result['engines']}`""",
+`from: {", ".join(result['engines'])}`""",
                     parse_mode=ParseMode.MARKDOWN,
                 )
             except BadRequest:
