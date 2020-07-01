@@ -38,9 +38,11 @@ def searx(update, context):
     response = json.loads(
         requests.post(
             INSTANCE_URL,
-            data={"q": json.dumps(context.args), "language": "en-US", "format": "json"},
+            data={"q": " ".join(context.args), "language": "en-US", "format": "json"},
         ).text
     )
+
+    print(json.dumps(response, indent=2))
 
     for i in range(results_number):
         if results_number > 5:
@@ -50,18 +52,19 @@ def searx(update, context):
             result = response["results"][i]
 
             try:
+                content = f"\n{result['content']}\n"
+            except KeyError:
+                content = ""
+
+            try:
                 update.message.reply_text(
                     f"""
 *{result['title']}*
 [direct link]({result['pretty_url']})
-
-{result['content']}
-
+{content}
 `from: {result['engines']}`""",
                     parse_mode=ParseMode.MARKDOWN,
                 )
-            except KeyError:
-                pass
             except BadRequest:
                 update.message.reply_text("Exception: BadRequest")
                 print("Exception: BadRequest")
