@@ -35,6 +35,26 @@ def request_(query):
     return response, query_link
 
 
+def format(result):
+    title, pretty_url, engines = (
+        result["title"],
+        result["pretty_url"],
+        result["engines"],
+    )
+    try:
+        content = (
+            result["content"]
+            .replace("[", "\\[")
+            .replace("_", "\\_")
+            .replace("-", "\\-")
+            .replace("*", "\\*")
+        )
+    except KeyError:
+        content = ""
+
+    return title, pretty_url, engines, content
+
+
 def result_message(title, pretty_url, query_link, content, engines):
     return f"""
 *{title}*
@@ -54,29 +74,18 @@ def searx(update, context):
         results_number = 1
 
     response, query_link = request_(context.args)
+    print(context.args)
 
     for i in range(results_number):
         try:
             result = json.loads(response.text)["results"][i]
-
-            title, pretty_url, engines = (
-                result["title"],
-                result["pretty_url"],
-                result["engines"],
-            )
-            try:
-                content = result["content"]
-            except KeyError:
-                content = ""
+            title, pretty_url, engines, content = format(result)
 
             try:
                 update.message.reply_text(
                     result_message(title, pretty_url, query_link, content, engines),
                     parse_mode=ParseMode.MARKDOWN,
                 )
-            except BadRequest:
-                update.message.reply_text("Exception: BadRequest")
-                print("Exception: BadRequest")
             except TimedOut:
                 update.message.reply_text("Exception: TimedOut")
                 print("Exception: TimedOut")
@@ -88,43 +97,29 @@ def searx(update, context):
 def inline(update, context):
     answers = []
     query = list(str(update.inline_query.query).split(" "))
+    print(query)
     if not query:
         return
     response, query_link = request_(query)
-    for i in range(15):
+    for i in range(12):
         try:
             result = json.loads(response.text)["results"][i]
         except IndexError:
             continue
+        title, pretty_url, engines, content = format(result)
 
-        title, pretty_url, engines = (
-            result["title"],
-            result["pretty_url"],
-            result["engines"],
-        )
-        try:
-            content = result["content"]
-        except KeyError:
-            content = ""
-
-            answers.append(
-                InlineQueryResultArticle(
-                    id=randint(0, 10000),
-                    title=title[:32] + (title[29:] and "..."),
-                    description=content[:32] + (content[29:] and "..."),
-                    input_message_content=InputTextMessageContent(
-                        result_message(title, pretty_url, query_link, content, engines),
-                        parse_mode=ParseMode.MARKDOWN,
-                    ),
-                )
-            )
-    try:
-        context.bot.answer_inline_query(update.inline_query.id, answers)
-    except BadRequest:
         answers.append(
-            InlineQueryResultArticle(id="Bad request", title="Bad request")
+            InlineQueryResultArticle(
+                id=randint(0, 10000),
+                title=title[:32] + (title[29:] and "..."),
+                description=content[:32] + (content[29:] and "..."),
+                input_message_content=InputTextMessageContent(
+                    result_message(title, pretty_url, query_link, content, engines),
+                    parse_mode=ParseMode.MARKDOWN,
+                ),
+            )
         )
-        print("Exception: BadRequest")
+    context.bot.answer_inline_query(update.inline_query.id, answers, cache_time=0)
 
 
 def main():
