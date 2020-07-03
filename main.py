@@ -26,10 +26,21 @@ def start(update, context):
 
 
 def request_(query):
-    return requests.post(
+    response = requests.post(
         INSTANCE_URL,
         data={"q": " ".join(query), "language": "en-US", "format": "json"},
     )
+    query_link = response.url + "?" + response.request.body.replace("&format=json", "")
+
+    return response, query_link
+
+
+def result_message(title, pretty_url, query_link, content, engines):
+    return f"""
+*{title}*
+[direct link]({pretty_url}) | [query link]({query_link})
+\n{content}\n
+`from: {", ".join(engines)}`"""
 
 
 def searx(update, context):
@@ -42,15 +53,17 @@ def searx(update, context):
     except ValueError:
         results_number = 1
 
-    response = request_(context.args)
+    response, query_link = request_(context.args)
 
     for i in range(results_number):
         try:
             result = json.loads(response.text)["results"][i]
-            query_link = (
-                response.url + "?" + response.request.body.replace("&format=json", "")
-            )
 
+            title, pretty_url, engines = (
+                result["title"],
+                result["pretty_url"],
+                result["engines"],
+            )
             try:
                 content = result["content"]
             except KeyError:
@@ -58,11 +71,7 @@ def searx(update, context):
 
             try:
                 update.message.reply_text(
-                    f"""
-*{result['title']}*
-[direct link]({result['pretty_url']}) | [query link]({query_link})
-\n{content}\n
-`from: {", ".join(result['engines'])}`""",
+                    result_message(title, pretty_url, query_link, content, engines),
                     parse_mode=ParseMode.MARKDOWN,
                 )
             except BadRequest:
@@ -81,17 +90,20 @@ def inline(update, context):
     query = list(str(update.inline_query.query).split(" "))
     if not query:
         return
-    response = request_(query)
-    for i in range(0, 10):
+    response, query_link = request_(query)
+    for i in range(15):
         result = json.loads(response.text)["results"][i]
-        title = result["title"]
-        query_link = (
-            response.url + "?" + response.request.body.replace("&format=json", "")
+
+        title, pretty_url, engines = (
+            result["title"],
+            result["pretty_url"],
+            result["engines"],
         )
         try:
             content = result["content"]
         except KeyError:
             content = ""
+
         try:
             answers.append(
                 InlineQueryResultArticle(
@@ -99,11 +111,7 @@ def inline(update, context):
                     title=title[:32] + (title[29:] and "..."),
                     description=content[:32] + (content[29:] and "..."),
                     input_message_content=InputTextMessageContent(
-                        f"""
-*{title}*
-[direct link]({result['pretty_url']}) | [query link]({query_link})
-\n{content}\n
-`from: {", ".join(result['engines'])}`""",
+                        result_message(title, pretty_url, query_link, content, engines),
                         parse_mode=ParseMode.MARKDOWN,
                     ),
                 )
