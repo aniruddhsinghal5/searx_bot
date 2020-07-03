@@ -107,7 +107,6 @@ def inline(update, context):
         except KeyError:
             content = ""
 
-        try:
             answers.append(
                 InlineQueryResultArticle(
                     id=randint(0, 10000),
@@ -119,12 +118,13 @@ def inline(update, context):
                     ),
                 )
             )
-        except BadRequest:
-            answers.append(
-                InlineQueryResultArticle(id="Bad request", title="Bad request")
-            )
-            print("Exception: BadRequest")
-    context.bot.answer_inline_query(update.inline_query.id, answers)
+    try:
+        context.bot.answer_inline_query(update.inline_query.id, answers)
+    except BadRequest:
+        answers.append(
+            InlineQueryResultArticle(id="Bad request", title="Bad request")
+        )
+        print("Exception: BadRequest")
 
 
 def main():
