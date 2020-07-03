@@ -92,7 +92,10 @@ def inline(update, context):
         return
     response, query_link = request_(query)
     for i in range(15):
-        result = json.loads(response.text)["results"][i]
+        try:
+            result = json.loads(response.text)["results"][i]
+        except IndexError:
+            continue
 
         title, pretty_url, engines = (
             result["title"],
@@ -115,10 +118,6 @@ def inline(update, context):
                         parse_mode=ParseMode.MARKDOWN,
                     ),
                 )
-            )
-        except IndexError:
-            answers.append(
-                InlineQueryResultArticle(id="No results", title="No results")
             )
         except BadRequest:
             answers.append(
