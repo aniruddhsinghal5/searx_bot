@@ -112,6 +112,9 @@ def inline(update, context):
             answers.append(
                 InlineQueryResultArticle(id="no results", title="no results")
             )
+        except BadRequest:
+            update.message.reply_text("Exception: BadRequest")
+            print("Exception: BadRequest")
     context.bot.answer_inline_query(update.inline_query.id, answers)
 
 
