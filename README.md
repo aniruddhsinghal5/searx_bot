@@ -10,7 +10,7 @@ Use `/start` or `/help` option to display available commands.
 
 + Clone this repo.
 ```
-$ git clone https://git.samedamci.me/samedamci/searx_bot && cd searx_bot
+$ git clone https://github.com/samedamci/searx_bot && cd searx_bot
 ```
 + Install required modules.
 ```
